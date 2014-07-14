@@ -1,0 +1,56 @@
+{
+   "abstract" : "Read a line from STDIN.",
+   "author" : [
+      "Matthaeus Kiem <cuer2s@gmail.com>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Term-ReadLine-Tiny",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Carp" : "0",
+            "Encode" : "0",
+            "Encode::Locale" : "0",
+            "Exporter" : "0",
+            "Term::ReadKey" : "0",
+            "Unicode::GCString" : "0",
+            "perl" : "5.010001",
+            "strict" : "0",
+            "warnings" : "0"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/kuerbis/Term-ReadLine::Tiny.git",
+         "web" : "https://github.com/kuerbis/Term-ReadLine::Tiny"
+      }
+   },
+   "version" : "0.001"
+}
