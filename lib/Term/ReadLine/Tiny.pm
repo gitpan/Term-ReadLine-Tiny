@@ -4,9 +4,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.001';
-use Exporter 'import';
-our @EXPORT_OK = qw( readline );
+our $VERSION = '0.002';
 
 use Carp   qw( croak );
 use Encode qw( encode decode );
@@ -29,8 +27,14 @@ my $Plugin_Package;
 BEGIN {
     if ( $^O eq 'MSWin32' ) {
         require Win32::Console::ANSI;
-        require Term::ReadLine::Tiny::Win32;
-        $Plugin_Package = 'Term::ReadLine::Tiny::Win32';
+        if ( $ENV{READLINE_TINY_READKEY} ) { # undocumented
+            require Term::ReadLine::Tiny::Linux;
+            $Plugin_Package = 'Term::ReadLine::Tiny::Linux';
+        }
+        else {
+            require Term::ReadLine::Tiny::Win32;
+            $Plugin_Package = 'Term::ReadLine::Tiny::Win32';
+        }
     }
     else {
         require Term::ReadLine::Tiny::Linux;
@@ -63,13 +67,6 @@ sub new {
         handle_out => \*STDOUT,
     }, $class;
     $self->__set_defaults();
-#    if ( defined $opt ) {
-#        croak "new: the (optional) argument must be a HASH reference" if ref $opt ne 'HASH';
-#        $self->__validate_options( $opt );
-#        for my $option ( %$opt ) {
-#            $self->{$option} = $opt->{$option};
-#        }
-#    }
     $self->{plugin} = $Plugin_Package->new();
     return $self;
 }
@@ -83,10 +80,11 @@ sub DESTROY {
 
 sub __set_defaults {
     my ( $self ) = @_;
-    $self->{no_echo}         //= 0;
+    $self->{compat}          //= undef;
     $self->{reinit_encoding} //= undef;
-    $self->{default}         //= '';
     $self->{asterix}         //= '*';
+    $self->{default}         //= '';
+    $self->{no_echo}         //= 0;
 }
 
 
@@ -95,6 +93,7 @@ sub __validate_options {
     return if ! defined $opt;
     my $valid = {
         no_echo         => '[ 0 1 ]',
+        compat          => '[ 0 1 ]',
         reinit_encoding => '',
         default         => '',
         asterix         => '',
@@ -137,7 +136,7 @@ sub __reset_term {
 sub config {
     my ( $self, $opt ) = @_;
     if ( defined $opt ) {
-        croak "new: the (optional) argument must be a HASH reference" if ref $opt ne 'HASH';
+        croak "config: the (optional) argument must be a HASH reference" if ref $opt ne 'HASH';
         $self->__validate_options( $opt );
         for my $option ( %$opt ) {
             $self->{$option} = $opt->{$option};
@@ -168,12 +167,13 @@ sub readline {
     else {
         $opt = {};
     }
+    $opt->{default} //= $self->{default};
     $opt->{no_echo} //= $self->{no_echo};
     $opt->{asterix} //= $self->{asterix};
-    my $str = encode( 'console_in', $opt->{default} // $self->{default} );
     local $| = 1;
     $self->__init_term();
     print SAVE_CURSOR_POSITION;
+    my $str = encode( 'console_in', $opt->{default} );
     $self->__print_readline( $opt, $prompt, $str );
 
     while ( 1 ) {
@@ -185,19 +185,25 @@ sub readline {
                 $self->__reset_term();
                 return;
             }
-            $str = '';
-            $self->__print_readline( $opt, $prompt, $str );
-            next;
+            else {
+                $str = '';
+                $self->__print_readline( $opt, $prompt, $str );
+                next;
+            }
         }
         elsif ( $key eq "\n" or $key eq "\r" ) {
             print "\n";
             $self->__reset_term();
+            if ( ! $self->{compat} || ! defined $self->{compat} && ! $ENV{READLINE_TINY_COMPAT} ) {
+                return decode( 'console_in', $str ) if $^O eq 'MSWin32';
+                return decode( 'console_in', $str ) if utf8::is_utf8( $key );
+            }
             return $str;
         }
         elsif ( ord $key == BSPACE || $key eq "\cH" ) {
             if ( length $str ) {
                 $str = decode( 'console_in', $str );
-                $str =~ s/\X\z//; # ?
+                $str =~ s/\X\z//;
                 $str = encode( 'console_in', $str );
             }
             $self->__print_readline( $opt, $prompt, $str );
@@ -208,10 +214,6 @@ sub readline {
             $self->__print_readline( $opt, $prompt, $str );
             next;
         }
-        #elsif ( $key !~ /^\p{Print}\z/ ) {
-        #    $self->__print_readline( $opt, $prompt, $str );
-        #    next;
-        #}
         $key = encode( 'console_in', $key ) if utf8::is_utf8( $key );
         $str .= $key;
         $self->__print_readline( $opt, $prompt, $str );
@@ -256,7 +258,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.001
+Version 0.002
 
 =cut
 
@@ -270,7 +272,7 @@ Version 0.001
 =head1 DESCRIPTION
 
 C<readline> reads a line from STDIN. As soon as C<Return> is pressed C<readline> returns the read string without the
-newline character - so no C<chomp> is required. The returned string is not decoded.
+newline character - so no C<chomp> is required.
 
 A C<Strg-D> removes the input-puffer if any, else it causes C<readline> to return nothing.
 
@@ -328,11 +330,31 @@ Allowed values: 0 or 1.
 
 Default: 0.
 
+=back
+
+Options not available in the C<readline> method:
+
+=over
+
+=item
+
+compat
+
+If I<compat> is set to 1, the return value of C<readline> is not decoded else the return value of C<readline>
+is decoded if the OS is a 'MSWin32' OS or if C<Term::ReadKey::ReadKey> returns strings where C<utf8::is_utf8> is true.
+
+Setting the environment variable READLINE_TINY_COMPAT to a true value has the same effect as setting I<compat> to 1
+unless I<compat> is defined. If I<compat> is defined READLINE_TINY_COMPAT has no meaning.
+
+Allowed values: 0 or 1.
+
+Default: no set
+
 =item
 
 reinit_encoding
 
-The get the right encoding C<Term::ReadLine::Tiny> uses L<Encode::Locale>. Passing an encoding to I<reinit_encoding>
+To get the right encoding C<Term::ReadLine::Tiny> uses L<Encode::Locale>. Passing an encoding to I<reinit_encoding>
 changes the encoding reported by C<Encode::Locale>. See L<Encode::Locale/reinit-encoding> for more details.
 
 Allowed values: an encoding which is recognized by the L<Encode> module.
@@ -372,6 +394,12 @@ no_echo
 If I<no_echo> is enabled, I<asterisk> strings are displayed instead of the characters.
 
 =back
+
+
+
+
+
+
 
 See L</config> for the default and allowed values.
 

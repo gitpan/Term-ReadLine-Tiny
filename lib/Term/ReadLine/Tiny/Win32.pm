@@ -5,7 +5,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 use Win32::Console qw( STD_INPUT_HANDLE STD_OUTPUT_HANDLE ENABLE_PROCESSED_INPUT );
 
