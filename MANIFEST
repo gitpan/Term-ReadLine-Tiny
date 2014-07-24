@@ -1,5 +1,6 @@
 Changes
 lib/Term/ReadLine/Tiny.pm
+lib/Term/ReadLine/Tiny/Constants.pm
 lib/Term/ReadLine/Tiny/Linux.pm
 lib/Term/ReadLine/Tiny/Win32.pm
 LICENSE

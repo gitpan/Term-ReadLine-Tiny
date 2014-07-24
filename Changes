@@ -1,6 +1,11 @@
 Revision history for Term::ReadLine::Tiny
 
 
+0.003   2014-07-24
+        - New keys.
+        - "readline" returns always decoded strings if not set "compat" or "$ENV{READLINE_TINY_COMPAT}".
+        - Update documentation.
+
 0.002   2014-07-16
         - Changed the handling of the decoding.
         - Added option "compat" and env variable "READLINE_TINY_COMPAT".

@@ -18,3 +18,4 @@ stackoverflow
 asterix
 reinit_encoding
 compat
+ascii

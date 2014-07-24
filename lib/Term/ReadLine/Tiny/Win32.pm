@@ -5,8 +5,11 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
+use Encode qw( decode );
+
+use Encode::Locale qw();
 use Win32::Console qw( STD_INPUT_HANDLE STD_OUTPUT_HANDLE ENABLE_PROCESSED_INPUT );
 
 
@@ -41,12 +44,7 @@ sub __reset_mode {
 
 sub __get_key {
     my ( $self ) = @_;
-    return $self->{input}->InputChar();
-}
-
-
-sub __flush_input {
-    my ( $self ) = @_;
+    return ord decode( 'console_in', $self->{input}->InputChar() );
 }
 
 

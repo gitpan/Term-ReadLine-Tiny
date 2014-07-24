@@ -4,23 +4,15 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
-use Carp   qw( croak );
+use Carp   qw( croak carp );
 use Encode qw( encode decode );
 
 use Encode::Locale    qw();
 use Unicode::GCString qw();
 
-
-sub BSPACE                  () { 0x7f }
-sub ESC                     () { 0x1b }
-sub UP                      () { "\e[A" }
-sub CLEAR_TO_END_OF_SCREEN  () { "\e[0J" }
-sub CLEAR_SCREEN            () { "\e[1;1H\e[0J" }
-sub SAVE_CURSOR_POSITION    () { "\e[s" }
-sub RESTORE_CURSOR_POSITION () { "\e[u" }
-
+use Term::ReadLine::Tiny::Constants qw( :rl );
 
 my $Plugin_Package;
 
@@ -53,7 +45,7 @@ sub OUT {
 }
 sub MinLine { undef }
 sub Attribs { {} }
-sub Features { {} }
+sub Features { { no_features => 1 } }
 sub addhistory {}
 sub ornaments {}
 
@@ -122,6 +114,7 @@ sub __init_term {
     if ( $self->{reinit_encoding} ) {
         Encode::Locale::reinit( $self->{reinit_encoding} );
     }
+
 }
 
 
@@ -173,71 +166,106 @@ sub readline {
     local $| = 1;
     $self->__init_term();
     print SAVE_CURSOR_POSITION;
-    my $str = encode( 'console_in', $opt->{default} );
-    $self->__print_readline( $opt, $prompt, $str );
+    my $gcs_prompt = Unicode::GCString->new( $prompt );
+    my $length_prompt = $gcs_prompt->columns();
+    my $str = Unicode::GCString->new( $prompt . $opt->{default} );
+    my $pos = $str->columns();
+    $self->__print_readline( $opt, $prompt, $str, $pos );
 
     while ( 1 ) {
         my $key = $self->{plugin}->__get_key();
-        return if ! defined $key;
-        if ( $key eq "\cD" ) {
-            if ( ! length $str ) {
+        if ( ! defined $key ) {
+            $self->__reset_term();
+            carp "EOT: $!";
+            return;
+        }
+        next if $key == NEXT_get_key;
+        next if $key == KEY_TAB;
+        if ( $key == KEY_BSPACE || $key == CONTROL_H ) {
+            if ( $pos - $length_prompt ) {
+                $pos--;
+                $str->substr( $pos, 1, '' );
+            }
+        }
+        elsif ( $key == CONTROL_U ) {
+            $str->substr( $length_prompt, $str->columns(), '' );
+            $pos = $length_prompt;
+        }
+        elsif ( $key == VK_DELETE || $key == CONTROL_D ) {
+            if ( $str->columns() - $length_prompt ) {
+                if ( $pos < $str->columns() ) {
+                    $str->substr( $pos, 1, '' );
+                }
+            }
+            else {
                 print "\n";
                 $self->__reset_term();
                 return;
             }
+        }
+        elsif ( $key == VK_RIGHT || $key == CONTROL_F ) {
+            $pos++ if $pos < $str->columns();
+        }
+        elsif ( $key == VK_LEFT || $key == CONTROL_B ) {
+            $pos-- if $pos > $length_prompt;
+        }
+        elsif ( $key == VK_END || $key == CONTROL_E ) {
+            $pos = $str->columns();
+        }
+        elsif ( $key == VK_HOME || $key == CONTROL_A ) {
+            $pos = $length_prompt;
+        }
+        else {
+            $key = chr $key;
+            utf8::upgrade $key;
+            if ( $key eq "\n" or $key eq "\r" ) {
+                $str->substr( 0, $length_prompt, '' );
+                print "\n";
+                $self->__reset_term();
+                if ( $self->{compat} || ! defined $self->{compat} && $ENV{READLINE_TINY_COMPAT} ) {
+                    return encode( 'console_in', $str->as_string );
+                }
+                return $str->as_string;
+            }
             else {
-                $str = '';
-                $self->__print_readline( $opt, $prompt, $str );
-                next;
+                $str->substr( $pos, 0, $key );
+                $pos++;
             }
         }
-        elsif ( $key eq "\n" or $key eq "\r" ) {
-            print "\n";
-            $self->__reset_term();
-            if ( ! $self->{compat} || ! defined $self->{compat} && ! $ENV{READLINE_TINY_COMPAT} ) {
-                return decode( 'console_in', $str ) if $^O eq 'MSWin32';
-                return decode( 'console_in', $str ) if utf8::is_utf8( $key );
-            }
-            return $str;
-        }
-        elsif ( ord $key == BSPACE || $key eq "\cH" ) {
-            if ( length $str ) {
-                $str = decode( 'console_in', $str );
-                $str =~ s/\X\z//;
-                $str = encode( 'console_in', $str );
-            }
-            $self->__print_readline( $opt, $prompt, $str );
-            next;
-        }
-        elsif ( ord $key == ESC ) {
-            $self->{plugin}->__flush_input();
-            $self->__print_readline( $opt, $prompt, $str );
-            next;
-        }
-        $key = encode( 'console_in', $key ) if utf8::is_utf8( $key );
-        $str .= $key;
-        $self->__print_readline( $opt, $prompt, $str );
+        $self->__print_readline( $opt, $prompt, $str, $pos );
     }
 }
 
 
 sub __print_readline {
-    my ( $self, $opt, $prompt, $str ) = @_;
-    my $gcs = Unicode::GCString->new( $prompt . $str );
-    my $up = int( $gcs->columns() / $self->{plugin}->__term_buff_width() );
+    my ( $self, $opt, $prompt, $str, $pos ) = @_;
+    my $row = int( $str->columns() / $self->{plugin}->__term_buff_width() );
+    my $col = $str->columns() % $self->{plugin}->__term_buff_width();
     print RESTORE_CURSOR_POSITION;
-    if ( $up ) {
-        print "\n" x $up;
-        print UP x $up;
+    if ( $row ) {
+        print "\n" x $row;
+        print UP x $row;
     }
     print CLEAR_TO_END_OF_SCREEN;
     print SAVE_CURSOR_POSITION;
     if ( $opt->{no_echo} ) {
-        my $gcs = Unicode::GCString->new( decode( 'console_in', $str ) );
-        print $prompt . ( $opt->{asterix} x $gcs->columns() );
+        my $gcs_prompt = Unicode::GCString->new( $prompt );
+        print $prompt . ( $opt->{asterix} x ( $str->columns() - $gcs_prompt->columns() ) );
     }
     else {
-        print $prompt . decode( 'console_in', $str );
+        print $str->as_string;
+    }
+    my $curs_row = int( $pos / $self->{plugin}->__term_buff_width() );
+    my $curs_col = $pos % $self->{plugin}->__term_buff_width();
+    my $up = $row - $curs_row;
+    if ( $up ) {
+        print UP x $up;
+    }
+    if ( $col > $curs_col ) {
+        print LEFT x ( $col - $curs_col );
+    }
+    elsif ( $col < $curs_col ) {
+        print RIGHT x ( $curs_col - $col );
     }
 }
 
@@ -258,7 +286,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.002
+Version 0.003
 
 =cut
 
@@ -274,9 +302,23 @@ Version 0.002
 C<readline> reads a line from STDIN. As soon as C<Return> is pressed C<readline> returns the read string without the
 newline character - so no C<chomp> is required.
 
-A C<Strg-D> removes the input-puffer if any, else it causes C<readline> to return nothing.
+=head2 Keys
 
-C<BackSpace> (or C<Strg-H>) deletes the last character of the string.
+C<BackSpace> or C<Strg-H>: Delete the character behind the cursor.
+
+C<Delete> or C<Strg-D>: Delete  the  character at point. Return nothing if the input puffer is empty.
+
+C<Strg-U>: Delete the line.
+
+C<Right-Arrow> or C<Strg-F>: Move forward a character.
+
+C<Left-Arrow> or C<Strg-B>: Move back a character.
+
+C<Home> or C<Strg-A>: Move to the start of the line.
+
+C<End> or C<Strg-E>: Move to the end of the line.
+
+C<Delete>, C<Right-Arrow>, C<Left-Arrow>, C<Home> and C<End> are not supported if the OS is MSWin32.
 
 C<Term::ReadLine::Tiny> is new so things may change in the next release.
 
@@ -341,10 +383,10 @@ Options not available in the C<readline> method:
 compat
 
 If I<compat> is set to 1, the return value of C<readline> is not decoded else the return value of C<readline>
-is decoded if the OS is a 'MSWin32' OS or if C<Term::ReadKey::ReadKey> returns strings where C<utf8::is_utf8> is true.
+is decoded.
 
 Setting the environment variable READLINE_TINY_COMPAT to a true value has the same effect as setting I<compat> to 1
-unless I<compat> is defined. If I<compat> is defined READLINE_TINY_COMPAT has no meaning.
+unless I<compat> is defined. If I<compat> is defined, READLINE_TINY_COMPAT has no meaning.
 
 Allowed values: 0 or 1.
 
@@ -370,7 +412,7 @@ C<readline> reads a line from STDIN.
     $line = $new->readline( $prompt, [ \%options ] );
 
 The fist argument is the prompt string. The optional second argument is the default string if it is not a reference. If
-the second argument is a hash-reference the hash is used to set the different options. The keys/options are
+the second argument is a hash-reference, the hash is used to set the different options. The keys/options are
 
 =over
 
@@ -395,12 +437,6 @@ If I<no_echo> is enabled, I<asterisk> strings are displayed instead of the chara
 
 =back
 
-
-
-
-
-
-
 See L</config> for the default and allowed values.
 
 =head1 REQUIREMENTS
@@ -408,6 +444,10 @@ See L</config> for the default and allowed values.
 =head2 Perl version
 
 Requires Perl version 5.10.1 or greater.
+
+=head2 Encoding layer for STDIN
+
+It is required an appropriate encoding layer for STDIN else C<readline> will break if a non ascii character is entered.
 
 =head2 Encoding layer for STDOUT
 
