@@ -15,7 +15,6 @@ BackSpace
 Kiem
 Matthäus
 stackoverflow
-asterix
 reinit_encoding
 compat
 ascii

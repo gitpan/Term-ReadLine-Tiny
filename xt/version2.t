@@ -2,16 +2,15 @@ use 5.010001;
 use strict;
 use warnings;
 use Time::Piece;
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 
 
 my $v             = -1;
 my $v_pod         = -1;
 my $v_linux       = -1;
-my $v_pod_linux   = -1;
 my $v_win32       = -1;
-my $v_pod_win32   = -1;
+my $v_const       = -1;
 my $v_changes     = -1;
 my $release_date  = -1;
 
@@ -46,6 +45,15 @@ while ( my $line = <$fh> ) {
 close $fh;
 
 
+open $fh, '<', 'lib/Term/ReadLine/Tiny/Constants.pm' or die $!;
+while ( my $line = <$fh> ) {
+    if ( $line =~ /^our\s\$VERSION\s=\s'(\d\.\d\d\d(?:_\d\d)?)';/ ) {
+        $v_const = $1;
+    }
+}
+close $fh;
+
+
 open my $fh_ch, '<', 'Changes' or die $!;
 while ( my $line = <$fh_ch> ) {
     if ( $line =~ /^\s*(\d+\.\d\d\d(?:_\d\d)?)\s+(\d\d\d\d-\d\d-\d\d)\s*\z/ ) {
@@ -64,6 +72,7 @@ my $today = $t->ymd;
 is( $v,            $v_pod,         'Version in POD Term::ReadLine::Tiny OK' );
 is( $v,            $v_linux,       'Version in Term::ReadLine::Tiny::Linux OK' );
 is( $v,            $v_win32,       'Version in Term::ReadLine::Tiny::Win32 OK' );
+is( $v,            $v_const,       'Version in Term::ReadLine::Tiny::Constants OK' );
 is( $v,            $v_changes,     'Version in "Changes" OK' );
 is( $release_date, $today,         'Release date in Changes is date from today' );
 

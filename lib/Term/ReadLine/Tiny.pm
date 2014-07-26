@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -19,14 +19,8 @@ my $Plugin_Package;
 BEGIN {
     if ( $^O eq 'MSWin32' ) {
         require Win32::Console::ANSI;
-        if ( $ENV{READLINE_TINY_READKEY} ) { # undocumented
-            require Term::ReadLine::Tiny::Linux;
-            $Plugin_Package = 'Term::ReadLine::Tiny::Linux';
-        }
-        else {
-            require Term::ReadLine::Tiny::Win32;
-            $Plugin_Package = 'Term::ReadLine::Tiny::Win32';
-        }
+        require Term::ReadLine::Tiny::Win32;
+        $Plugin_Package = 'Term::ReadLine::Tiny::Win32';
     }
     else {
         require Term::ReadLine::Tiny::Linux;
@@ -74,7 +68,6 @@ sub __set_defaults {
     my ( $self ) = @_;
     $self->{compat}          //= undef;
     $self->{reinit_encoding} //= undef;
-    $self->{asterix}         //= '*';
     $self->{default}         //= '';
     $self->{no_echo}         //= 0;
 }
@@ -84,11 +77,10 @@ sub __validate_options {
     my ( $self, $opt ) = @_;
     return if ! defined $opt;
     my $valid = {
-        no_echo         => '[ 0 1 ]',
+        no_echo         => '[ 0 1 2 ]',
         compat          => '[ 0 1 ]',
         reinit_encoding => '',
         default         => '',
-        asterix         => '',
     };
     my $sub =  ( caller( 1 ) )[3];
     $sub =~ s/^.+::([^:]+)\z/$1/;
@@ -162,15 +154,14 @@ sub readline {
     }
     $opt->{default} //= $self->{default};
     $opt->{no_echo} //= $self->{no_echo};
-    $opt->{asterix} //= $self->{asterix};
     local $| = 1;
     $self->__init_term();
     print SAVE_CURSOR_POSITION;
     my $gcs_prompt = Unicode::GCString->new( $prompt );
-    my $length_prompt = $gcs_prompt->columns();
+    my $length_prompt = $gcs_prompt->length();
     my $str = Unicode::GCString->new( $prompt . $opt->{default} );
-    my $pos = $str->columns();
-    $self->__print_readline( $opt, $prompt, $str, $pos );
+    my $pos_str = $str->length();
+    $self->__print_readline( $opt, $prompt, $str, $pos_str );
 
     while ( 1 ) {
         my $key = $self->{plugin}->__get_key();
@@ -182,19 +173,19 @@ sub readline {
         next if $key == NEXT_get_key;
         next if $key == KEY_TAB;
         if ( $key == KEY_BSPACE || $key == CONTROL_H ) {
-            if ( $pos - $length_prompt ) {
-                $pos--;
-                $str->substr( $pos, 1, '' );
+            if ( $pos_str - $length_prompt ) {
+                $pos_str--;
+                $str->substr( $pos_str, 1, '' );
             }
         }
         elsif ( $key == CONTROL_U ) {
-            $str->substr( $length_prompt, $str->columns(), '' );
-            $pos = $length_prompt;
+            $str->substr( $length_prompt, $str->length(), '' );
+            $pos_str = $length_prompt;
         }
         elsif ( $key == VK_DELETE || $key == CONTROL_D ) {
-            if ( $str->columns() - $length_prompt ) {
-                if ( $pos < $str->columns() ) {
-                    $str->substr( $pos, 1, '' );
+            if ( $str->length() - $length_prompt ) {
+                if ( $pos_str < $str->length() ) {
+                    $str->substr( $pos_str, 1, '' );
                 }
             }
             else {
@@ -204,16 +195,16 @@ sub readline {
             }
         }
         elsif ( $key == VK_RIGHT || $key == CONTROL_F ) {
-            $pos++ if $pos < $str->columns();
+            $pos_str++ if $pos_str < $str->length();
         }
-        elsif ( $key == VK_LEFT || $key == CONTROL_B ) {
-            $pos-- if $pos > $length_prompt;
+        elsif ( $key == VK_LEFT  || $key == CONTROL_B ) {
+            $pos_str-- if $pos_str > $length_prompt;
         }
-        elsif ( $key == VK_END || $key == CONTROL_E ) {
-            $pos = $str->columns();
+        elsif ( $key == VK_END   || $key == CONTROL_E ) {
+            $pos_str = $str->length();
         }
-        elsif ( $key == VK_HOME || $key == CONTROL_A ) {
-            $pos = $length_prompt;
+        elsif ( $key == VK_HOME  || $key == CONTROL_A ) {
+            $pos_str = $length_prompt;
         }
         else {
             $key = chr $key;
@@ -228,19 +219,35 @@ sub readline {
                 return $str->as_string;
             }
             else {
-                $str->substr( $pos, 0, $key );
-                $pos++;
+                $str->substr( $pos_str, 0, $key );
+                $pos_str++;
             }
         }
-        $self->__print_readline( $opt, $prompt, $str, $pos );
+        $self->__print_readline( $opt, $prompt, $str, $pos_str );
     }
 }
 
 
 sub __print_readline {
-    my ( $self, $opt, $prompt, $str, $pos ) = @_;
-    my $row = int( $str->columns() / $self->{plugin}->__term_buff_width() );
-    my $col = $str->columns() % $self->{plugin}->__term_buff_width();
+    my ( $self, $opt, $prompt, $str, $pos_str ) = @_;
+    my $tmp_pos = $str->pos();
+    $str->pos( 0 );
+    my $col = 0;
+    my $row = 0;
+    my @gc_in_row = ();
+    my $gc;
+    my $term_width = $self->{plugin}->__term_buff_width();
+    while ( defined( $gc = $str->next ) ) {
+        if ( $term_width < ( $col += $gc->columns ) ) {
+            $col = $gc->columns();
+            $row++;
+        }
+        $gc_in_row[$row]++;
+    }
+    if ( $col == $term_width ) {
+        $row++;
+    }
+    $str->pos( $tmp_pos );
     print RESTORE_CURSOR_POSITION;
     if ( $row ) {
         print "\n" x $row;
@@ -248,25 +255,50 @@ sub __print_readline {
     }
     print CLEAR_TO_END_OF_SCREEN;
     print SAVE_CURSOR_POSITION;
+    my $abs_row = $self->{plugin}->__get_cursor_row_position();
     if ( $opt->{no_echo} ) {
+        if ( $opt->{no_echo} == 2 ) {
+            print $prompt;
+            return;
+        }
         my $gcs_prompt = Unicode::GCString->new( $prompt );
-        print $prompt . ( $opt->{asterix} x ( $str->columns() - $gcs_prompt->columns() ) );
+        print $prompt . ( '*' x ( $str->length() - $gcs_prompt->length() ) );
     }
     else {
         print $str->as_string;
     }
-    my $curs_row = int( $pos / $self->{plugin}->__term_buff_width() );
-    my $curs_col = $pos % $self->{plugin}->__term_buff_width();
-    my $up = $row - $curs_row;
-    if ( $up ) {
-        print UP x $up;
+    my $str_before_cursor = $str->substr( 0, $pos_str );
+    my $cursor_row = 0;
+    my $cursor_col = 0;
+    my $gc_sum  = 0;
+    for my $row ( 0 .. $#gc_in_row ) {
+        if ( $gc_sum + $gc_in_row[$row] < $pos_str ) {
+            $gc_sum += $gc_in_row[$row];
+        }
+        else {
+            $cursor_row = $row;
+            $str_before_cursor->pos( $gc_sum );
+            my $gc_last_row = 0;
+            while ( defined( my $gc = $str_before_cursor->next ) ) {
+                $cursor_col += $gc->columns();
+                $gc_last_row++;
+            }
+            if ( $cursor_col == $term_width ) {
+                $cursor_col = 0;
+                $cursor_row++;
+            }
+            elsif ( $cursor_col == $term_width - 1 && $gc_last_row == $gc_in_row[$row] ) {
+                if ( defined ( my $first_gc_next_row = $str->item( $gc_sum + $gc_in_row[$row] ) ) ) {
+                    if ( $first_gc_next_row->columns() == 2 ) {
+                        $cursor_col = 0;
+                        $cursor_row++;
+                    }
+                }
+            }
+            last;
+        }
     }
-    if ( $col > $curs_col ) {
-        print LEFT x ( $col - $curs_col );
-    }
-    elsif ( $col < $curs_col ) {
-        print RIGHT x ( $curs_col - $col );
-    }
+    $self->{plugin}->__set_cursor_position( $cursor_row + $abs_row, $cursor_col + 1 );
 }
 
 
@@ -286,7 +318,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.003
+Version 0.004
 
 =cut
 
@@ -318,8 +350,6 @@ C<Home> or C<Strg-A>: Move to the start of the line.
 
 C<End> or C<Strg-E>: Move to the end of the line.
 
-C<Delete>, C<Right-Arrow>, C<Left-Arrow>, C<Home> and C<End> are not supported if the OS is MSWin32.
-
 C<Term::ReadLine::Tiny> is new so things may change in the next release.
 
 =head1 METHODS
@@ -344,16 +374,6 @@ The available options are:
 
 =item
 
-asterix
-
-Sets the default I<asterix>.
-
-Allowed values: a decoded string.
-
-Default: 'C<*>'.
-
-=item
-
 default
 
 Sets the default I<default> string.
@@ -368,7 +388,7 @@ no_echo
 
 Sets the default value for I<no_echo>.
 
-Allowed values: 0 or 1.
+Allowed values: 0, 1 or 2.
 
 Default: 0.
 
@@ -418,13 +438,6 @@ the second argument is a hash-reference, the hash is used to set the different o
 
 =item
 
-asterix
-
-Sets the string, which is displayed instead of a character when I<no_echo> is enabled. To get no output at all in the
-I<no_echo> mode set I<asterix> to the empty string.
-
-=item
-
 default
 
 Sets a initial value of input.
@@ -433,7 +446,9 @@ Sets a initial value of input.
 
 no_echo
 
-If I<no_echo> is enabled, I<asterisk> strings are displayed instead of the characters.
+If I<no_echo> is set to 1, "C<*>" are displayed instead of the characters.
+
+If I<no_echo> is set to 2, no output is shown apart from the prompt string.
 
 =back
 
@@ -453,8 +468,9 @@ It is required an appropriate encoding layer for STDIN else C<readline> will bre
 
 For a correct output it is required an appropriate encoding layer for STDOUT.
 
-MSWin32: Adding C<print "\e(U"> to the code disables the Windows own codepage conversion (e.g. to make the script more
-portable). See L<Win32::Console::ANSI/Escape_sequences_for_Select_Character_Set> for more details.
+MSWin32: L<Win32::Console::ANSI> (which is used by C<Term::ReadLine::Tiny>) enables by default the Windows own codepage
+conversion. Adding C<print "\e(U"> to the code disables this automatic mapping. See
+L<Win32::Console::ANSI/Escape_sequences_for_Select_Character_Set> for more details.
 
 =head1 SUPPORT
 
