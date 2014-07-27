@@ -5,7 +5,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 use Term::ReadKey  qw( GetTerminalSize ReadKey ReadMode );
 
@@ -113,6 +113,18 @@ sub __set_cursor_position {
     my ( $self, $col, $row ) = @_;
     print "\e[${row};${col}H";
 }
+
+
+sub __up {
+    my ( $self, $rows_up ) = @_;
+    return if ! $rows_up;
+    print "\e[${rows_up}A";
+}
+
+sub __clear_output {
+    print "\e[0J";
+}
+
 
 
 1;

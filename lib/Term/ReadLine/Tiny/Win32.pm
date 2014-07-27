@@ -5,13 +5,13 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 use Encode qw( decode );
 
-use Encode::Locale       qw();
-use Win32::Console       qw( STD_INPUT_HANDLE ENABLE_PROCESSED_INPUT STD_OUTPUT_HANDLE
-                             RIGHT_ALT_PRESSED LEFT_ALT_PRESSED RIGHT_CTRL_PRESSED LEFT_CTRL_PRESSED SHIFT_PRESSED );
+use Encode::Locale qw();
+use Win32::Console qw( STD_INPUT_HANDLE ENABLE_PROCESSED_INPUT STD_OUTPUT_HANDLE
+                       RIGHT_ALT_PRESSED LEFT_ALT_PRESSED RIGHT_CTRL_PRESSED LEFT_CTRL_PRESSED SHIFT_PRESSED );
 
 use Term::ReadLine::Tiny::Constants qw( :win32 );
 
@@ -104,6 +104,23 @@ sub __set_cursor_position {
     $self->{output}->Cursor( $col - 1, $row - 1 );
 }
 
+
+sub __up {
+    my ( $self, $rows_up ) = @_;
+    return if ! $rows_up; #
+    my ( $col, $row ) = $self->__get_cursor_position;
+    my $new_row = $row - $rows_up;
+    $new_row = 1 if $new_row < 1;
+    $self->__set_cursor_position( $col, $new_row  );
+}
+
+
+sub __clear_output {
+    my ( $self, $chars ) = @_;
+    my ( $col, $row ) = $self->__get_cursor_position();
+    print ' ' x $chars;
+    $self->__set_cursor_position( $col, $row );
+}
 
 
 1;

@@ -5,13 +5,11 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 use Exporter qw( import );
 
 our @EXPORT_OK = qw(
-        UP RIGHT LEFT LF CR
-        BEEP CLEAR_SCREEN CLEAR_TO_END_OF_SCREEN
         SAVE_CURSOR_POSITION RESTORE_CURSOR_POSITION GET_CURSOR_POSITION
         NEXT_get_key
         CONTROL_A CONTROL_B CONTROL_D CONTROL_E CONTROL_F CONTROL_H CONTROL_U KEY_BTAB KEY_TAB
@@ -22,8 +20,6 @@ our @EXPORT_OK = qw(
 
 our %EXPORT_TAGS = (
     rl => [ qw(
-        UP RIGHT LEFT LF CR
-        BEEP CLEAR_SCREEN CLEAR_TO_END_OF_SCREEN
         SAVE_CURSOR_POSITION RESTORE_CURSOR_POSITION
         NEXT_get_key
         CONTROL_A CONTROL_B CONTROL_D CONTROL_E CONTROL_F CONTROL_H CONTROL_U KEY_BTAB KEY_TAB
@@ -45,15 +41,15 @@ our %EXPORT_TAGS = (
 
 
 
-sub UP                     () { "\e[A" }
-sub RIGHT                  () { "\e[C" }
-sub LEFT                   () { "\e[D" }
-sub LF                     () { "\n" } #
-sub CR                     () { "\r" } #
+#sub UP                     () { "\e[A" }
+#sub RIGHT                  () { "\e[C" }
+#sub LEFT                   () { "\e[D" }
+#sub LF                     () { "\n" } #
+#sub CR                     () { "\r" } #
 
-sub BEEP                   () { "\a" }
-sub CLEAR_SCREEN           () { "\e[2J\e[1;1H" }
-sub CLEAR_TO_END_OF_SCREEN () { "\e[0J" }
+#sub BEEP                   () { "\a" }
+#sub CLEAR_SCREEN           () { "\e[2J\e[1;1H" }
+#sub CLEAR_TO_END_OF_SCREEN () { "\e[0J" }
 
 sub SAVE_CURSOR_POSITION    () { "\e[s" }
 sub RESTORE_CURSOR_POSITION () { "\e[u" }
