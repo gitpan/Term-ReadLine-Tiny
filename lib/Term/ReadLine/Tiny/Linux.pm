@@ -5,11 +5,8 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
-use Encode qw( decode );
-
-use Encode::Locale qw();
 use Term::ReadKey  qw( GetTerminalSize ReadKey ReadMode );
 
 use Term::ReadLine::Tiny::Constants qw( :linux );
@@ -80,7 +77,7 @@ sub __get_key {
                         $rx = ReadKey( 0 );
                     }
                     if ( $rx eq 'R' ) {
-                        #$self->{abs_cursor_x} = $abs_curs_x;
+                        $self->{abs_cursor_x} = $abs_curs_x;
                         $self->{abs_cursor_y} = $abs_curs_y;
                     }
                     return NEXT_get_key;
@@ -98,22 +95,22 @@ sub __get_key {
         }
     }
     else {
-        #return ord decode( 'console_in', $c1 ) if $^O eq 'MSWin32';
         return ord $c1;
     }
 };
 
 
-sub __get_cursor_row_position {
+sub __get_cursor_position {
     my ( $self ) = @_;
+    #$self->{abs_cursor_x} = 1;
     #$self->{abs_cursor_y} = 1;
     print GET_CURSOR_POSITION;
-    my $dummy = $self->__get_key();
-    return $self->{abs_cursor_y};
+    my $dummy = $self->__get_key(); #
+    return $self->{abs_cursor_x}, $self->{abs_cursor_y};
 }
 
 sub __set_cursor_position {
-    my ( $self, $row, $col ) = @_;
+    my ( $self, $col, $row ) = @_;
     print "\e[${row};${col}H";
 }
 

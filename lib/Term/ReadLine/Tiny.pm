@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -18,7 +18,6 @@ my $Plugin_Package;
 
 BEGIN {
     if ( $^O eq 'MSWin32' ) {
-        require Win32::Console::ANSI;
         require Term::ReadLine::Tiny::Win32;
         $Plugin_Package = 'Term::ReadLine::Tiny::Win32';
     }
@@ -37,7 +36,7 @@ sub OUT {
     my ( $self ) = @_;
     return $self->{handle_out};
 }
-sub MinLine { undef }
+sub MinLine {}
 sub Attribs { {} }
 sub Features { { no_features => 1 } }
 sub addhistory {}
@@ -156,7 +155,14 @@ sub readline {
     $opt->{no_echo} //= $self->{no_echo};
     local $| = 1;
     $self->__init_term();
-    print SAVE_CURSOR_POSITION;
+
+    if ( $^O eq 'MSWin32' ) {
+        ( $self->{abs_col}, $self->{abs_row} ) = $self->{plugin}->__get_cursor_position();
+    }
+    else {
+        print SAVE_CURSOR_POSITION;
+    }
+
     my $gcs_prompt = Unicode::GCString->new( $prompt );
     my $length_prompt = $gcs_prompt->length();
     my $str = Unicode::GCString->new( $prompt . $opt->{default} );
@@ -228,6 +234,7 @@ sub readline {
 }
 
 
+
 sub __print_readline {
     my ( $self, $opt, $prompt, $str, $pos_str ) = @_;
     my $tmp_pos = $str->pos();
@@ -235,9 +242,8 @@ sub __print_readline {
     my $col = 0;
     my $row = 0;
     my @gc_in_row = ();
-    my $gc;
     my $term_width = $self->{plugin}->__term_buff_width();
-    while ( defined( $gc = $str->next ) ) {
+    while ( defined( my $gc = $str->next ) ) {
         if ( $term_width < ( $col += $gc->columns ) ) {
             $col = $gc->columns();
             $row++;
@@ -248,14 +254,25 @@ sub __print_readline {
         $row++;
     }
     $str->pos( $tmp_pos );
-    print RESTORE_CURSOR_POSITION;
+
+    if ( $^O eq 'MSWin32' ) {
+        $self->{plugin}->__set_cursor_position( $self->{abs_col}, $self->{abs_row} );
+    }
+    else {
+        print RESTORE_CURSOR_POSITION;
+    }
+
     if ( $row ) {
         print "\n" x $row;
         print UP x $row;
     }
     print CLEAR_TO_END_OF_SCREEN;
-    print SAVE_CURSOR_POSITION;
-    my $abs_row = $self->{plugin}->__get_cursor_row_position();
+
+    if ( $^O ne 'MSWin32' ) {
+        print SAVE_CURSOR_POSITION;
+        ( $self->{abs_col}, $self->{abs_row} ) = $self->{plugin}->__get_cursor_position();
+    }
+
     if ( $opt->{no_echo} ) {
         if ( $opt->{no_echo} == 2 ) {
             print $prompt;
@@ -277,28 +294,24 @@ sub __print_readline {
         }
         else {
             $cursor_row = $row;
-            $str_before_cursor->pos( $gc_sum );
-            my $gc_last_row = 0;
-            while ( defined( my $gc = $str_before_cursor->next ) ) {
-                $cursor_col += $gc->columns();
-                $gc_last_row++;
-            }
-            if ( $cursor_col == $term_width ) {
-                $cursor_col = 0;
-                $cursor_row++;
-            }
-            elsif ( $cursor_col == $term_width - 1 && $gc_last_row == $gc_in_row[$row] ) {
-                if ( defined ( my $first_gc_next_row = $str->item( $gc_sum + $gc_in_row[$row] ) ) ) {
-                    if ( $first_gc_next_row->columns() == 2 ) {
-                        $cursor_col = 0;
-                        $cursor_row++;
-                    }
-                }
-            }
             last;
         }
     }
-    $self->{plugin}->__set_cursor_position( $cursor_row + $abs_row, $cursor_col + 1 );
+    $str_before_cursor->pos( $gc_sum );
+    my $gc_cursor_row = 0;
+    while ( defined( my $gc = $str_before_cursor->next ) ) {
+        $cursor_col += $gc->columns();
+        $gc_cursor_row++;
+    }
+    if ( $cursor_col == $term_width ) {
+        $cursor_col = 0;
+        $cursor_row++;
+    }
+    elsif ( $gc_cursor_row == $gc_in_row[$cursor_row] && defined $gc_in_row[$cursor_row + 1]) {
+        $cursor_col = 0;
+        $cursor_row++;
+    }
+    $self->{plugin}->__set_cursor_position( $cursor_col + 1, $cursor_row + $self->{abs_row} );
 }
 
 
@@ -318,7 +331,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.004
+Version 0.005
 
 =cut
 
@@ -467,10 +480,6 @@ It is required an appropriate encoding layer for STDIN else C<readline> will bre
 =head2 Encoding layer for STDOUT
 
 For a correct output it is required an appropriate encoding layer for STDOUT.
-
-MSWin32: L<Win32::Console::ANSI> (which is used by C<Term::ReadLine::Tiny>) enables by default the Windows own codepage
-conversion. Adding C<print "\e(U"> to the code disables this automatic mapping. See
-L<Win32::Console::ANSI/Escape_sequences_for_Select_Character_Set> for more details.
 
 =head1 SUPPORT
 

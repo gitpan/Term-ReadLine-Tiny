@@ -1,6 +1,11 @@
 Revision history for Term::ReadLine::Tiny
 
 
+0.005   2014-07-27
+        - Bugfixes
+        - MSWin32: removed dependency on "Win32::Console::ANSI".
+        - Update documentation.
+
 0.004   2014-07-26
         - Bugfixes.
         - Removed the key-support-limitation for MSWin32.

@@ -5,14 +5,13 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 use Encode qw( decode );
 
 use Encode::Locale       qw();
-use Win32::Console       qw( STD_INPUT_HANDLE ENABLE_PROCESSED_INPUT
+use Win32::Console       qw( STD_INPUT_HANDLE ENABLE_PROCESSED_INPUT STD_OUTPUT_HANDLE
                              RIGHT_ALT_PRESSED LEFT_ALT_PRESSED RIGHT_CTRL_PRESSED LEFT_CTRL_PRESSED SHIFT_PRESSED );
-use Win32::Console::ANSI qw( Cursor XYMax );
 
 use Term::ReadLine::Tiny::Constants qw( :win32 );
 
@@ -27,6 +26,7 @@ sub __set_mode {
     $self->{input} = Win32::Console->new( STD_INPUT_HANDLE );
     $self->{old_in_mode} = $self->{input}->Mode();
     $self->{input}->Mode( ENABLE_PROCESSED_INPUT );
+    $self->{output} = Win32::Console->new( STD_OUTPUT_HANDLE );
 }
 
 
@@ -40,6 +40,7 @@ sub __reset_mode {
         $self->{input}->Flush;
         # workaround Bug #33513:
         delete $self->{input}{handle};
+        delete $self->{output}{handle};
     }
 }
 
@@ -86,24 +87,22 @@ sub __get_key {
 
 sub __term_buff_width {
     my ( $self ) = @_;
-    my ( $term_width ) = XYMax();
+    my ( $term_width ) = $self->{output}->MaxWindow();
     return $term_width;
 }
 
 
-sub __get_cursor_row_position {
+sub __get_cursor_position {
     my ( $self ) = @_;
-    my ( $x, $y ) = Cursor();
-    return $y;
+    my ( $col, $row ) = $self->{output}->Cursor();
+    return $col + 1, $row + 1;
 }
 
 
 sub __set_cursor_position {
-    my ( $self, $row, $col ) = @_;
-    Cursor( $col, $row );
+    my ( $self, $col, $row ) = @_;
+    $self->{output}->Cursor( $col - 1, $row - 1 );
 }
-
-
 
 
 
