@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.007';
+our $VERSION = '0.008';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -233,25 +233,26 @@ sub __print_readline {
     my ( $self, $opt, $prompt, $str, $pos_str ) = @_;
     my $tmp_pos = $str->pos();
     $str->pos( 0 );
-    my $col = 0;
-    my $row = 0;
+    my $str_col = 0;
+    my $str_row= 0;
     my @gc_in_row = ();
     my $term_width = $self->{plugin}->__term_buff_width();
     while ( defined( my $gc = $str->next ) ) {
-        if ( $term_width < ( $col += $gc->columns ) ) {
-            $col = $gc->columns();
-            $row++;
+        if ( $term_width < ( $str_col += $gc->columns ) ) {
+            $str_col = $gc->columns();
+            $str_row++;
         }
-        $gc_in_row[$row]++;
+        $gc_in_row[$str_row]++;
     }
-    if ( $col == $term_width ) {
-        $row++;
+    if ( $str_col == $term_width ) {
+        $str_col = 0;
+        $str_row++;
     }
     $str->pos( $tmp_pos );
     $self->{plugin}->__restore_cursor_position();
-    if ( $row ) {
-        print "\n" x $row;
-        $self->{plugin}->__up( $row );
+    if ( $str_row) {
+        print "\n" x $str_row;
+        $self->{plugin}->__up( $str_row);
     }
     $self->{plugin}->__clear_output( $self->{prev_str_cols} );
     $self->{prev_str_cols} = $str->columns();
@@ -315,7 +316,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.007
+Version 0.008
 
 =cut
 
@@ -456,6 +457,10 @@ See L</config> for the default and allowed values.
 =head2 Perl version
 
 Requires Perl version 5.10.1 or greater.
+
+=head2 Terminal
+
+It is required a terminal which uses a monospaced font and understands ANSI escape sequences.
 
 =head2 Encoding layer for STDIN
 

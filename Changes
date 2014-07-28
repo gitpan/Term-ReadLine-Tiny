@@ -1,6 +1,11 @@
 Revision history for Term::ReadLine::Tiny
 
 
+0.008   2014-07-28
+        - Bugfix.
+        - Update Makefile.PL.
+        - Update documentation.
+
 0.007   2014-07-28
         - Code refactoring.
 
