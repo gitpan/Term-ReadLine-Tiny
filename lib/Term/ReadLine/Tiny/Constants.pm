@@ -5,12 +5,12 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 use Exporter qw( import );
 
 our @EXPORT_OK = qw(
-        SAVE_CURSOR_POSITION RESTORE_CURSOR_POSITION GET_CURSOR_POSITION
+        GET_CURSOR_POSITION
         NEXT_get_key
         CONTROL_A CONTROL_B CONTROL_D CONTROL_E CONTROL_F CONTROL_H CONTROL_U KEY_BTAB KEY_TAB
         KEY_ENTER KEY_ESC KEY_BSPACE
@@ -20,7 +20,6 @@ our @EXPORT_OK = qw(
 
 our %EXPORT_TAGS = (
     rl => [ qw(
-        SAVE_CURSOR_POSITION RESTORE_CURSOR_POSITION
         NEXT_get_key
         CONTROL_A CONTROL_B CONTROL_D CONTROL_E CONTROL_F CONTROL_H CONTROL_U KEY_BTAB KEY_TAB
         KEY_ENTER KEY_ESC KEY_BSPACE
@@ -51,8 +50,8 @@ our %EXPORT_TAGS = (
 #sub CLEAR_SCREEN           () { "\e[2J\e[1;1H" }
 #sub CLEAR_TO_END_OF_SCREEN () { "\e[0J" }
 
-sub SAVE_CURSOR_POSITION    () { "\e[s" }
-sub RESTORE_CURSOR_POSITION () { "\e[u" }
+#sub SAVE_CURSOR_POSITION    () { "\e[s" }
+#sub RESTORE_CURSOR_POSITION () { "\e[u" }
 
 sub GET_CURSOR_POSITION     () { "\e[6n" }
 

@@ -5,7 +5,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 use Term::ReadKey  qw( GetTerminalSize ReadKey ReadMode );
 
@@ -126,6 +126,13 @@ sub __clear_output {
 }
 
 
+sub __save_cursor_position {
+    print "\e[s";
+}
+
+sub __restore_cursor_position {
+    print "\e[u";
+}
 
 1;
 

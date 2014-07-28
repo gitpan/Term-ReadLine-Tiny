@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -153,19 +153,15 @@ sub readline {
     }
     $opt->{default} //= $self->{default};
     $opt->{no_echo} //= $self->{no_echo};
-    local $| = 1;
-    $self->__init_term();
-
-    ####
-    ( $self->{abs_col}, $self->{abs_row} ) = $self->{plugin}->__get_cursor_position();
-    print SAVE_CURSOR_POSITION if $^O ne 'MSWin32';
-    ####
-
-    my $gcs_prompt = Unicode::GCString->new( $prompt );
+    my $gcs_prompt    = Unicode::GCString->new( $prompt );
     my $length_prompt = $gcs_prompt->length();
-    my $str = Unicode::GCString->new( $prompt . $opt->{default} );
+    my $str     = Unicode::GCString->new( $prompt . $opt->{default} );
     my $pos_str = $str->length();
     $self->{prev_str_cols} = $str->columns();
+
+    local $| = 1;
+    $self->__init_term();
+    $self->{plugin}->__save_cursor_position();
     $self->__print_readline( $opt, $prompt, $str, $pos_str );
 
     while ( 1 ) {
@@ -233,7 +229,6 @@ sub readline {
 }
 
 
-
 sub __print_readline {
     my ( $self, $opt, $prompt, $str, $pos_str ) = @_;
     my $tmp_pos = $str->pos();
@@ -253,28 +248,15 @@ sub __print_readline {
         $row++;
     }
     $str->pos( $tmp_pos );
-
-
-    ####
-    if ( $^O eq 'MSWin32' ) {
-        $self->{plugin}->__set_cursor_position( $self->{abs_col}, $self->{abs_row} );
-    }
-    else {
-        print RESTORE_CURSOR_POSITION;
-    }
+    $self->{plugin}->__restore_cursor_position();
     if ( $row ) {
         print "\n" x $row;
         $self->{plugin}->__up( $row );
     }
-
     $self->{plugin}->__clear_output( $self->{prev_str_cols} );
-
-    if ( $^O ne 'MSWin32' ) {
-        print SAVE_CURSOR_POSITION;
-        ( $self->{abs_col}, $self->{abs_row} ) = $self->{plugin}->__get_cursor_position();
-    }
-    ####
-
+    $self->{prev_str_cols} = $str->columns();
+    $self->{plugin}->__save_cursor_position();
+    my ( $abs_col, $abs_row ) = $self->{plugin}->__get_cursor_position();
     if ( $opt->{no_echo} ) {
         if ( $opt->{no_echo} == 2 ) {
             print $prompt;
@@ -313,8 +295,7 @@ sub __print_readline {
         $cursor_col = 0;
         $cursor_row++;
     }
-    $self->{plugin}->__set_cursor_position( $cursor_col + 1, $cursor_row + $self->{abs_row} );
-    $self->{prev_str_cols} = $str->columns();
+    $self->{plugin}->__set_cursor_position( $cursor_col + 1, $cursor_row + $abs_row );
 }
 
 
@@ -334,7 +315,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.006
+Version 0.007
 
 =cut
 

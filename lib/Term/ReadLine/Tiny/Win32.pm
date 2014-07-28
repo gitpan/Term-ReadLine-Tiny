@@ -5,7 +5,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 use Encode qw( decode );
 
@@ -121,6 +121,20 @@ sub __clear_output {
     print ' ' x $chars;
     $self->__set_cursor_position( $col, $row );
 }
+
+
+
+sub __save_cursor_position {
+    my ( $self ) = @_;
+    $self->{saved_cursor_position} = [ $self->{output}->Cursor() ];
+}
+
+sub __restore_cursor_position {
+    my ( $self ) = @_;
+    $self->{output}->Cursor( @{$self->{saved_cursor_position}} );
+}
+
+
 
 
 1;

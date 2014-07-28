@@ -1,6 +1,9 @@
 Revision history for Term::ReadLine::Tiny
 
 
+0.007   2014-07-28
+        - Code refactoring.
+
 0.006   2014-07-27
         - MSWin32: replaced ANSI escape sequences.
 

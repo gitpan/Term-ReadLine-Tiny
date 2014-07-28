@@ -75,5 +75,3 @@ is( $v,            $v_win32,       'Version in Term::ReadLine::Tiny::Win32 OK' )
 is( $v,            $v_const,       'Version in Term::ReadLine::Tiny::Constants OK' );
 is( $v,            $v_changes,     'Version in "Changes" OK' );
 is( $release_date, $today,         'Release date in Changes is date from today' );
-
-
