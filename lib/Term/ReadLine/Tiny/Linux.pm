@@ -5,7 +5,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 use Term::ReadKey  qw( GetTerminalSize ReadKey ReadMode );
 
@@ -18,26 +18,26 @@ sub new {
 
 
 sub __set_mode {
-    my ( $self ) = @_;
+    #my ( $self ) = @_;
     ReadMode( 'cbreak' );
 };
 
 
 sub __reset_mode {
-    my ( $self ) = @_;
+    #my ( $self ) = @_;
     ReadMode( 'restore' );
 }
 
 
 sub __term_buff_width {
-    my ( $self ) = @_;
+    #my ( $self ) = @_;
     my ( $term_width ) = GetTerminalSize();
     return $term_width;
 }
 
 
 sub __get_key {
-    my ( $self ) = @_;
+    #my ( $self ) = @_;
     my $c1 = ReadKey( 0 );
     return if ! defined $c1;
     if ( $c1 eq "\e" ) {
@@ -62,26 +62,6 @@ sub __get_key {
                         return NEXT_get_key;
                     }
                 }
-                elsif ( $c4 =~ /^[;0-9]$/ ) { # response to "\e[6n"
-                    my $abs_curs_y = $c3;
-                    my $ry = $c4;
-                    while ( $ry =~ m/^[0-9]$/ ) {
-                        $abs_curs_y .= $ry;
-                        $ry = ReadKey( 0 );
-                    }
-                    return NEXT_get_key if $ry ne ';';
-                    my $abs_curs_x = '';
-                    my $rx = ReadKey( 0 );
-                    while ( $rx =~ m/^[0-9]$/ ) {
-                        $abs_curs_x .= $rx;
-                        $rx = ReadKey( 0 );
-                    }
-                    if ( $rx eq 'R' ) {
-                        $self->{abs_cursor_x} = $abs_curs_x;
-                        $self->{abs_cursor_y} = $abs_curs_y;
-                    }
-                    return NEXT_get_key;
-                }
                 else {
                     return NEXT_get_key;
                 }
@@ -100,39 +80,24 @@ sub __get_key {
 };
 
 
-sub __get_cursor_position {
-    my ( $self ) = @_;
-    #$self->{abs_cursor_x} = 1;
-    #$self->{abs_cursor_y} = 1;
-    print GET_CURSOR_POSITION;
-    my $dummy = $self->__get_key(); #
-    return $self->{abs_cursor_x}, $self->{abs_cursor_y};
-}
-
-sub __set_cursor_position {
-    my ( $self, $col, $row ) = @_;
-    print "\e[${row};${col}H";
-}
+sub __up    { print "\e[${_[1]}A"; }
 
 
-sub __up {
-    my ( $self, $rows_up ) = @_;
-    return if ! $rows_up;
-    print "\e[${rows_up}A";
-}
-
-sub __clear_output {
-    print "\e[0J";
-}
+sub __left  { print "\e[${_[1]}D"; }
 
 
-sub __save_cursor_position {
-    print "\e[s";
-}
+sub __right { print "\e[${_[1]}C"; }
 
-sub __restore_cursor_position {
-    print "\e[u";
-}
+
+sub __clear_output { print "\e[0J"; }
+
+
+sub __save_cursor_position    { print "\e[s"; }
+
+
+sub __restore_cursor_position { print "\e[u"; }
+
+
 
 1;
 

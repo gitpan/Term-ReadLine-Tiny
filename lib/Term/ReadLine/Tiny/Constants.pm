@@ -5,12 +5,11 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 use Exporter qw( import );
 
 our @EXPORT_OK = qw(
-        GET_CURSOR_POSITION
         NEXT_get_key
         CONTROL_A CONTROL_B CONTROL_D CONTROL_E CONTROL_F CONTROL_H CONTROL_U KEY_BTAB KEY_TAB
         KEY_ENTER KEY_ESC KEY_BSPACE
@@ -26,7 +25,6 @@ our %EXPORT_TAGS = (
         VK_END VK_HOME VK_LEFT VK_UP VK_RIGHT VK_DELETE
     ) ],
     linux  => [ qw(
-        GET_CURSOR_POSITION
         NEXT_get_key
         KEY_BTAB KEY_ESC
         VK_END VK_HOME VK_LEFT VK_UP VK_RIGHT VK_DELETE
@@ -53,7 +51,7 @@ our %EXPORT_TAGS = (
 #sub SAVE_CURSOR_POSITION    () { "\e[s" }
 #sub RESTORE_CURSOR_POSITION () { "\e[u" }
 
-sub GET_CURSOR_POSITION     () { "\e[6n" }
+#sub GET_CURSOR_POSITION     () { "\e[6n" }
 
 
 sub NEXT_get_key  () { -1 }

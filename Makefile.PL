@@ -7,12 +7,12 @@ use ExtUtils::MakeMaker;
 my %prereqs_os_specific;
 if ( $^O eq 'MSWin32' ) {
     %prereqs_os_specific = (
-        'Win32::Console'       => 0,
+        'Win32::Console' => 0,
     );
 }
 else {
     %prereqs_os_specific = (
-        'Term::ReadKey'        => 0,
+        'Term::ReadKey'  => 0,
     );
 }
 

@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.010001;
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -200,6 +200,7 @@ sub readline {
         }
         elsif ( $key == VK_LEFT  || $key == CONTROL_B ) {
             $pos_str-- if $pos_str > $length_prompt;
+            $self->{rau} = 1 if $pos_str + 1 == $str->length();
         }
         elsif ( $key == VK_END   || $key == CONTROL_E ) {
             $pos_str = $str->length();
@@ -234,7 +235,7 @@ sub __print_readline {
     my $tmp_pos = $str->pos();
     $str->pos( 0 );
     my $str_col = 0;
-    my $str_row= 0;
+    my $str_row = 0;
     my @gc_in_row = ();
     my $term_width = $self->{plugin}->__term_buff_width();
     while ( defined( my $gc = $str->next ) ) {
@@ -249,15 +250,14 @@ sub __print_readline {
         $str_row++;
     }
     $str->pos( $tmp_pos );
+    #############################################
     $self->{plugin}->__restore_cursor_position();
-    if ( $str_row) {
+    if ( $str_row ) {
         print "\n" x $str_row;
-        $self->{plugin}->__up( $str_row);
+        $self->{plugin}->__up( $str_row );
     }
     $self->{plugin}->__clear_output( $self->{prev_str_cols} );
-    $self->{prev_str_cols} = $str->columns();
     $self->{plugin}->__save_cursor_position();
-    my ( $abs_col, $abs_row ) = $self->{plugin}->__get_cursor_position();
     if ( $opt->{no_echo} ) {
         if ( $opt->{no_echo} == 2 ) {
             print $prompt;
@@ -269,6 +269,7 @@ sub __print_readline {
     else {
         print $str->as_string;
     }
+    #############################################
     my $str_before_cursor = $str->substr( 0, $pos_str );
     my $cursor_row = 0;
     my $cursor_col = 0;
@@ -292,11 +293,32 @@ sub __print_readline {
         $cursor_col = 0;
         $cursor_row++;
     }
-    elsif ( @gc_in_row && $gc_cursor_row == $gc_in_row[$cursor_row] && defined $gc_in_row[$cursor_row + 1]) {
+    elsif ( defined $gc_in_row[$cursor_row + 1] && $gc_cursor_row == $gc_in_row[$cursor_row] ) {
         $cursor_col = 0;
         $cursor_row++;
     }
-    $self->{plugin}->__set_cursor_position( $cursor_col + 1, $cursor_row + $abs_row );
+    if ( $^O eq 'MSWin32' ) {
+        $self->{prev_str_cols} = $str->columns();
+        my ( $abs_col, $abs_row ) = $self->{plugin}->__get_cursor_position();
+        $self->{plugin}->__set_cursor_position( $cursor_col + 1, $cursor_row + $abs_row - $str_row );
+        return;
+    }
+    if ( $str_row > $cursor_row && $str_col == 0 ) {
+        --$str_row;
+        $str_col = $term_width - 1;
+        if ( $self->{rau} && $cursor_col == $term_width - 1 ) {
+            $self->{plugin}->__right( $term_width - 1 );
+        }
+    }
+    if ( $str_row > $cursor_row ) {
+        $self->{plugin}->__up( $str_row - $cursor_row );
+    }
+    if ( $str_col > $cursor_col ) {
+        $self->{plugin}->__left( $str_col - $cursor_col );
+    }
+    elsif ( $str_col < $cursor_col ) {
+        $self->{plugin}->__right( $cursor_col - $str_col );
+    }
 }
 
 
@@ -316,7 +338,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.008
+Version 0.009
 
 =cut
 
