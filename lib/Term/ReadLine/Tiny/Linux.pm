@@ -3,9 +3,9 @@ Term::ReadLine::Tiny::Linux;
 
 use warnings;
 use strict;
-use 5.010001;
+use 5.010000;
 
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 
 use Term::ReadKey  qw( GetTerminalSize ReadKey ReadMode );
 
@@ -45,19 +45,28 @@ sub __get_key {
         if ( ! defined $c2 ) {
             return  NEXT_get_key; # KEY_ESC
         }
+        elsif ( $c2 eq 'O' ) {
+            my $c3 = ReadKey( 0 );
+               if ( $c3 eq 'C' ) { return VK_RIGHT; }
+            elsif ( $c3 eq 'D' ) { return VK_LEFT; }
+            elsif ( $c3 eq 'F' ) { return VK_END; }
+            elsif ( $c3 eq 'H' ) { return VK_HOME; }
+            elsif ( $c3 eq 'Z' ) { return KEY_BTAB; }
+            else {
+                return NEXT_get_key;
+            }
+        }
         elsif ( $c2 eq '[' ) {
             my $c3 = ReadKey( 0 );
                if ( $c3 eq 'C' ) { return VK_RIGHT; }
             elsif ( $c3 eq 'D' ) { return VK_LEFT; }
             elsif ( $c3 eq 'F' ) { return VK_END; }
             elsif ( $c3 eq 'H' ) { return VK_HOME; }
-            elsif ( $c3 eq 'Z' ) { return KEY_BTAB; } #
+            elsif ( $c3 eq 'Z' ) { return KEY_BTAB; }
             elsif ( $c3 =~ /^[0-9]$/ ) {
                 my $c4 = ReadKey( 0 );
                 if ( $c4 eq '~' ) {
-                       if ( $c3 eq '1' ) { return VK_END; }
-                    elsif ( $c3 eq '3' ) { return VK_DELETE; }
-                    elsif ( $c3 eq '4' ) { return VK_HOME; }
+                    if ( $c3 eq '3' ) { return VK_DELETE; }
                     else {
                         return NEXT_get_key;
                     }

@@ -3,9 +3,9 @@ Term::ReadLine::Tiny::Win32;
 
 use warnings;
 use strict;
-use 5.010001;
+use 5.010000;
 
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 
 use Encode qw( decode );
 
@@ -27,6 +27,9 @@ sub __set_mode {
     $self->{old_in_mode} = $self->{input}->Mode();
     $self->{input}->Mode( ENABLE_PROCESSED_INPUT );
     $self->{output} = Win32::Console->new( STD_OUTPUT_HANDLE );
+    $self->{def_attr}  = $self->{output}->Attr();
+    $self->{bg_color}  = $self->{def_attr} & 0x70;
+    $self->{fill_attr} = $self->{bg_color} | $self->{bg_color};
 }
 
 
@@ -115,13 +118,14 @@ sub __up {
 }
 
 
-sub __clear_output {
+sub __clear_output{
     my ( $self, $chars ) = @_;
     my ( $col, $row ) = $self->__get_cursor_position();
-    print ' ' x $chars;
-    $self->__set_cursor_position( $col, $row );
+    $self->{output}->FillAttr(
+            $self->{fill_attr},
+            $chars,
+            $col - 2, $row - 1 );
 }
-
 
 
 sub __save_cursor_position {

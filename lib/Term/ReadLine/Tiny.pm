@@ -2,9 +2,9 @@ package Term::ReadLine::Tiny;
 
 use warnings;
 use strict;
-use 5.010001;
+use 5.010000;
 
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -122,7 +122,7 @@ sub config {
     if ( defined $opt ) {
         croak "config: the (optional) argument must be a HASH reference" if ref $opt ne 'HASH';
         $self->__validate_options( $opt );
-        for my $option ( %$opt ) {
+        for my $option ( keys %$opt ) {
             $self->{$option} = $opt->{$option};
         }
     }
@@ -199,8 +199,10 @@ sub readline {
             $pos_str++ if $pos_str < $str->length();
         }
         elsif ( $key == VK_LEFT  || $key == CONTROL_B ) {
-            $pos_str-- if $pos_str > $length_prompt;
-            $self->{rau} = 1 if $pos_str + 1 == $str->length();
+            if ( $pos_str > $length_prompt ) {
+                $self->{manually_right} = 1 if $pos_str == $str->length();
+                $pos_str--;
+            }
         }
         elsif ( $key == VK_END   || $key == CONTROL_E ) {
             $pos_str = $str->length();
@@ -211,7 +213,7 @@ sub readline {
         else {
             $key = chr $key;
             utf8::upgrade $key;
-            if ( $key eq "\n" or $key eq "\r" ) {
+            if ( $key eq "\n" || $key eq "\r" ) { ###
                 $str->substr( 0, $length_prompt, '' );
                 print "\n";
                 $self->__reset_term();
@@ -306,7 +308,7 @@ sub __print_readline {
     if ( $str_row > $cursor_row && $str_col == 0 ) {
         --$str_row;
         $str_col = $term_width - 1;
-        if ( $self->{rau} && $cursor_col == $term_width - 1 ) {
+        if ( $self->{manually_right} && $cursor_col == $term_width - 1 ) {
             $self->{plugin}->__right( $term_width - 1 );
         }
     }
@@ -338,7 +340,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.009
+Version 0.010
 
 =cut
 
@@ -478,7 +480,7 @@ See L</config> for the default and allowed values.
 
 =head2 Perl version
 
-Requires Perl version 5.10.1 or greater.
+Requires Perl version 5.10.0 or greater.
 
 =head2 Terminal
 
