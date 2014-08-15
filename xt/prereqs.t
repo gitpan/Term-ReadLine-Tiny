@@ -5,4 +5,4 @@ use Test::More;
 
 use Test::Prereq;
 
-prereq_ok();
+prereq_ok( undef, undef, [ qw( Data_Test_Arguments ) ] );

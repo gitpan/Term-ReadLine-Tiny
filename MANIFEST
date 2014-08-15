@@ -10,7 +10,12 @@ README
 t/00-load.t
 t/01-can.t
 t/02-methods.t
-t/03_arguments.t
+t/03_arguments_config.t
+t/04_valid_arguments_readline.t
+t/05_invalid_arguments_readline.t
+t/Data_Test_Arguments.pm
+t/readline_invalid_args.pl
+t/readline_valid_args.pl
 xt/manifest.t
 xt/perl_minimum_version.t
 xt/pod-coverage.t

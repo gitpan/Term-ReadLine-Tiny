@@ -3,6 +3,7 @@ abstract: 'Read a line from STDIN.'
 author:
   - 'Matthaeus Kiem <cuer2s@gmail.com>'
 build_requires:
+  Expect: '0'
   Test::Fatal: '0'
   Test::More: '0'
 configure_requires:
@@ -30,4 +31,4 @@ requires:
   warnings: '0'
 resources:
   repository: https://github.com/kuerbis/Term-ReadLine::Tiny.git
-version: '0.010'
+version: 0.010_01

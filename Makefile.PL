@@ -5,6 +5,7 @@ use ExtUtils::MakeMaker;
 
 
 my %prereqs_os_specific;
+my %test_prereqs_os_specific;
 if ( $^O eq 'MSWin32' ) {
     %prereqs_os_specific = (
         'Win32::Console' => 0,
@@ -13,6 +14,9 @@ if ( $^O eq 'MSWin32' ) {
 else {
     %prereqs_os_specific = (
         'Term::ReadKey'  => 0,
+    );
+    %test_prereqs_os_specific = (
+        'Expect'         => 0,
     );
 }
 
@@ -39,6 +43,7 @@ WriteMakefile(
     BUILD_REQUIRES   => {
         'Test::More'        => 0,
         'Test::Fatal'       => 0,
+        %test_prereqs_os_specific,
     },
     PREREQ_PM => {
         'strict'            => 0,

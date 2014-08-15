@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.010000;
 
-our $VERSION = '0.010';
+our $VERSION = '0.010_01';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -180,8 +180,11 @@ sub readline {
             }
         }
         elsif ( $key == CONTROL_U ) {
-            $str->substr( $length_prompt, $str->length(), '' );
+            $str->substr( $length_prompt, $pos_str - $length_prompt, '' );
             $pos_str = $length_prompt;
+        }
+        elsif ( $key == CONTROL_K ) {
+            $str->substr( $pos_str, $str->length() - $pos_str, '' );
         }
         elsif ( $key == VK_DELETE || $key == CONTROL_D ) {
             if ( $str->length() - $length_prompt ) {
@@ -340,7 +343,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.010
+Version 0.010_01
 
 =cut
 
@@ -362,7 +365,9 @@ C<BackSpace> or C<Strg-H>: Delete the character behind the cursor.
 
 C<Delete> or C<Strg-D>: Delete  the  character at point. Return nothing if the input puffer is empty.
 
-C<Strg-U>: Delete the line.
+C<Strg-U>: Delete the text backward from the cursor to the beginning of the line.
+
+C<Strg-K>: Delete the text from the cursor to the end of the line.
 
 C<Right-Arrow> or C<Strg-F>: Move forward a character.
 
