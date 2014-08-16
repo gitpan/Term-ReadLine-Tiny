@@ -1,6 +1,9 @@
 Revision history for Term::ReadLine::Tiny
 
 
+0.010_02   2014-08-16
+        - New tests.
+
 0.010_01   2014-08-15
         - Added "Ctrl+K" and changed "Ctrl+U".
         - New tests.
