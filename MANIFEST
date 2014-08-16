@@ -14,8 +14,10 @@ t/03_arguments_config.t
 t/04_valid_arguments_readline.t
 t/05_invalid_arguments_readline.t
 t/06_readline.t
+t/compat_readline.pl
 t/Data_Test_Arguments.pm
 t/Data_Test_Readline.pm
+t/env_compat_readline.pl
 t/readline.pl
 t/readline_invalid_args.pl
 t/readline_valid_args.pl

@@ -11,8 +11,9 @@ use FindBin qw( $RealBin );
 use lib $RealBin;
 use Data_Test_Readline;
 
+BEGIN { $ENV{READLINE_TINY_COMPAT} = 1 }
 
-my $a_ref = Data_Test_Readline::return_test_data();
+my $a_ref  = Data_Test_Readline::return_test_data();
 
 my $tiny = Term::ReadLine::Tiny->new();
 
