@@ -4,7 +4,7 @@ Data_Test_Readline;
 use 5.010000;
 use warnings;
 use strict;
-use Encode qw( encode );
+
 
 sub key_seq {
     return {
@@ -82,9 +82,9 @@ sub return_test_data {
              arguments => [ 'Prompt: ', { default => "many words " x 1000, no_echo => 0 } ],
         },
         {
-            used_keys => [ "abcde ", "\x{263a}\x{263b} " x 10, ( 'LEFT' ) x 36, ( 'RIGHT' ) x 8, 'CONTROL_K', 'ENTER' ],
-            expected  => "<\x{06f2}\x{06f0}\x{06f1}\x{06f4} abcde \x{263a}\x{263b}>",
-            arguments => [ "Prompt-\x{842c}\x{91cc}\x{9577}\x{57ce}: ", { default => "\x{06f2}\x{06f0}\x{06f1}\x{06f4} " } ],
+            used_keys => [ "abcde ", "XY " x 10, ( 'LEFT' ) x 36, ( 'RIGHT' ) x 8, 'CONTROL_K', 'ENTER' ],
+            expected  => "<DEFAULT abcde XY>",
+            arguments => [ "Prompt: ", { default => "DEFAULT " } ],
         },
         {
             used_keys => [ "The black cat climbed the green tree", 'HOME', ( 'RIGHT' ) x 4, ( 'DELETE' ) x 6, 'END', ( 'LEFT' ) x 5, ( 'BSPACE' ) x 6, 'ENTER' ],

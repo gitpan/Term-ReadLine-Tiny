@@ -9,21 +9,25 @@ use strict;
 
 sub valid_args {
     return [
-        {   expected => "<>",
+        {
+            expected => "<>",
             args => [ 'Prompt: ' ],
         },
         {
             expected => "<default>",
             args => [ 'Prompt: ', 'default' ],
         },
-        {   expected => "<default>",
+        {
+            expected => "<default>",
             args => [ 'Prompt: ', { default => 'default', no_echo => 0 } ],
         },
-        {   expected => "<\x{842c}\x{91cc}\x{9577}\x{57ce}>",
-            args => [ 'Prompt: ', { no_echo => 1, default => "\x{842c}\x{91cc}\x{9577}\x{57ce}" } ],
+        {
+            expected => "<DEFAULT>",
+            args => [ 'Prompt: ', { no_echo => 1, default => "DEFAULT" } ],
         },
-        {   expected => "<123>",
-            args => [ "\x{842c}\x{91cc}\x{9577}\x{57ce}: ", { no_echo => 2, default => 123 } ],
+        {
+            expected => "<123>",
+            args => [ "Prompt: ", { no_echo => 2, default => 123 } ],
         },
     ];
 }

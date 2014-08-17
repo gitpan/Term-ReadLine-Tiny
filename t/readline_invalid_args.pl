@@ -2,10 +2,10 @@
 use strict;
 use warnings;
 use 5.010000;
-binmode STDOUT, 'utf8';
-use FindBin qw( $RealBin );
 
 use Term::ReadLine::Tiny;
+
+use FindBin qw( $RealBin );
 use lib $RealBin;
 use Data_Test_Arguments;
 
