@@ -1,4 +1,4 @@
-use 5.010000;
+use 5.008000;
 use strict;
 use warnings;
 use Test::More;
@@ -18,9 +18,8 @@ ok( $features->{no_features} == 1, "Features: 'no_features' == 1" );
 
 ok( ref( my $attributes = $new->Attribs() ) eq 'HASH', "ref( \$new->Attribs() ) is 'HASH'" );
 
-ok( ref( my $out = $new->OUT() ) eq 'GLOB', "ref( \$new->OUT() ) is 'GLOB'" );
-ok( ref( my $in  = $new->IN() )  eq 'GLOB', "ref( \$new->IN() )  is 'GLOB'" );
-
+ok( ! defined( my $out         = $new->OUT() ),        "\$new->OUT() ) returns nothing" );
+ok( ! defined( my $in          = $new->IN() ),         "\$new->IN() ) returns nothing" );
 ok( ! defined( my $min_line    = $new->MinLine() ),    "\$new->MinLine() returns nothing" );
 ok( ! defined( my $add_history = $new->addhistory() ), "\$new->addhistory() returns nothing" );
 ok( ! defined( my $ornaments   = $new->ornaments() ),  "\$new->ornaments() returns nothing" );

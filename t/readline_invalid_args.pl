@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use 5.010000;
+use 5.008000;
 
 use Term::ReadLine::Tiny;
 
@@ -16,12 +16,12 @@ for my $ref ( @$a_ref  ) {
     my $args = $ref->{args};
     eval {
         my $line = $tiny->readline( @$args );
-        say "<$line>";
+        print "<$line>\n";
         1;
     }
     or do {
         my $error = $@;
         chomp $error;
-        say "<$error>";
+        print "<$error>\n";
     }
 }

@@ -1,4 +1,4 @@
-use 5.010000;
+use 5.008000;
 use warnings;
 use strict;
 use Test::More;
@@ -19,7 +19,8 @@ subtest 'config_valid_arg', sub {
     for my $opt ( sort keys %$valid_values ) {
         for my $val ( @{$valid_values->{$opt}}, undef ) {
             my $exception = exception { $new->config( { $opt => $val } ) };
-            ok( ! defined $exception, "\$new->config( { $opt => " . ( $val // 'undef' ) . " } )" );
+            my $value = ! defined $val ? 'undef' : $val;
+            ok( ! defined $exception, "\$new->config( { $opt => $value } )" );
         }
     }
     my $exception;
@@ -31,6 +32,8 @@ subtest 'config_valid_arg', sub {
     my $mixed_2 = { reinit_encoding => undef, compat => 0, no_echo => 1,  default => 'green' };
     $exception = exception { $new->config( $mixed_2 ) };
     ok( ! defined $exception, "\$new->config( { %$mixed_2 } )" );
+
+    done_testing();
 };
 
 
@@ -61,6 +64,7 @@ subtest 'config_invalid_arg', sub {
     $exception = exception { $new->config( $mixed_invalid_2 ) };
     ok( $exception =~ /config:/, "\$new->config( { %$mixed_invalid_2 } ) => $exception" );
 
+    done_testing();
 };
 
 

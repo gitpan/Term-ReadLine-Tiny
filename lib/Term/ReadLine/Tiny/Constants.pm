@@ -3,9 +3,9 @@ Term::ReadLine::Tiny::Constants;
 
 use warnings;
 use strict;
-use 5.010000;
+use 5.008000;
 
-our $VERSION = '0.010_04';
+our $VERSION = '0.010_05';
 
 use Exporter qw( import );
 

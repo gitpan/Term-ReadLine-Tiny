@@ -2,9 +2,9 @@ package Term::ReadLine::Tiny;
 
 use warnings;
 use strict;
-use 5.010000;
+use 5.008000;
 
-our $VERSION = '0.010_04';
+our $VERSION = '0.010_05';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -28,14 +28,8 @@ BEGIN {
 }
 
 sub ReadLine { 'Term::ReadLine::Tiny' }
-sub IN {
-    my ( $self ) = @_;
-    return $self->{handle_in};
-}
-sub OUT {
-    my ( $self ) = @_;
-    return $self->{handle_out};
-}
+sub IN {}
+sub OUT {}
 sub MinLine {}
 sub Attribs { {} }
 sub Features { { no_features => 1 } }
@@ -47,9 +41,7 @@ sub new {
     my $class = shift;
     my ( $name ) = @_;
     my $self = bless {
-        name       => $name,
-        handle_in  => \*STDIN,
-        handle_out => \*STDOUT,
+        name => $name,
     }, $class;
     $self->__set_defaults();
     $self->{plugin} = $Plugin_Package->new();
@@ -65,10 +57,10 @@ sub DESTROY {
 
 sub __set_defaults {
     my ( $self ) = @_;
-    $self->{compat}          //= undef;
-    $self->{reinit_encoding} //= undef;
-    $self->{default}         //= '';
-    $self->{no_echo}         //= 0;
+    #$self->{compat}          = undef if ! defined $self->{compat};
+    #$self->{reinit_encoding} = undef if ! defined $self->{reinit_encoding};
+    $self->{default} = '' if ! defined $self->{default};
+    $self->{no_echo} = 0  if ! defined $self->{no_echo};
 }
 
 
@@ -151,8 +143,8 @@ sub readline {
     else {
         $opt = {};
     }
-    $opt->{default} //= $self->{default};
-    $opt->{no_echo} //= $self->{no_echo};
+    $opt->{default} = $self->{default} if ! defined $opt->{default};
+    $opt->{no_echo} = $self->{no_echo} if ! defined $opt->{no_echo};
     my $gcs_prompt    = Unicode::GCString->new( $prompt );
     my $length_prompt = $gcs_prompt->length();
     my $str     = Unicode::GCString->new( $prompt . $opt->{default} );
@@ -343,7 +335,7 @@ Term::ReadLine::Tiny - Read a line from STDIN.
 
 =head1 VERSION
 
-Version 0.010_04
+Version 0.010_05
 
 =cut
 
@@ -376,8 +368,6 @@ C<Left-Arrow> or C<Strg-B>: Move back a character.
 C<Home> or C<Strg-A>: Move to the start of the line.
 
 C<End> or C<Strg-E>: Move to the end of the line.
-
-C<Term::ReadLine::Tiny> is new so things may change in the next release.
 
 =head1 METHODS
 
@@ -485,19 +475,16 @@ See L</config> for the default and allowed values.
 
 =head2 Perl version
 
-Requires Perl version 5.10.0 or greater.
+Requires Perl version 5.08.0 or greater.
 
 =head2 Terminal
 
 It is required a terminal which uses a monospaced font and understands ANSI escape sequences.
 
-=head2 Encoding layer for STDIN
+=head2 Encoding layer
 
-It is required an appropriate encoding layer for STDIN else C<readline> will break if a non ascii character is entered.
-
-=head2 Encoding layer for STDOUT
-
-For a correct output it is required an appropriate encoding layer for STDOUT.
+It is required to use appropriate I/O encoding layers. If the encoding layer for STDIN doesn't match the terminal's
+character set, C<readline> will break if a non ascii character is entered.
 
 =head1 SUPPORT
 

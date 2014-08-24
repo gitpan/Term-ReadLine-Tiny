@@ -1,4 +1,4 @@
-use 5.010000;
+use 5.008000;
 use warnings;
 use strict;
 use Test::More;
@@ -44,7 +44,8 @@ subtest 'readline', sub {
         }
         $exp->send( @seq );
         my $ret = $exp->expect( 2, [ qr/<.*>/ ] );
-        my $result = $exp->match() // '';
+        my $result = $exp->match();
+        $result = '' if ! defined $result;
 
         ok( $ret, 'matched something' );
         ok( $result eq $expected, "expected: '$expected', got: '$result'" );

@@ -1,4 +1,4 @@
-use 5.010000;
+use 5.008000;
 use warnings;
 use strict;
 use Test::More;
@@ -33,7 +33,8 @@ for my $ref ( @$a_ref ) {
 
     ok( $ret, 'matched something' );
 
-    my $result = $exp->match() // '';
+    my $result = $exp->match();
+    $result = '' if ! defined $result;
     ok( $result eq $expected, "expected: '$expected', got: '$result'" );
 }
 
