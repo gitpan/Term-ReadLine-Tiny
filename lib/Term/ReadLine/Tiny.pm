@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use 5.008000;
 
-our $VERSION = '0.010_05';
+our $VERSION = '0.011';
 
 use Carp   qw( croak carp );
 use Encode qw( encode decode );
@@ -331,11 +331,11 @@ __END__
 
 =head1 NAME
 
-Term::ReadLine::Tiny - Read a line from STDIN.
+Term::ReadLine::Tiny - This module is now called Term::ReadLine::Simple.
 
 =head1 VERSION
 
-Version 0.010_05
+Version 0.011
 
 =cut
 
@@ -348,8 +348,12 @@ Version 0.010_05
 
 =head1 DESCRIPTION
 
+After reading the discussion in L<Please don't use ::Tiny unless it meets the ::Tiny criteria, thanks!|http://blogs.perl.org/users/dan_muey/2014/08/please-dont-use-tiny-unless-it-meets-the-tiny-criteria-thanks.html> I have decided to rename this module. The module is now called L<Term::ReadLine::Simple>. C<Term::Readline::Tiny> will be removed.
+
 C<readline> reads a line from STDIN. As soon as C<Return> is pressed C<readline> returns the read string without the
 newline character - so no C<chomp> is required.
+
+This module is intended to cope with Unicode (multibyte character/grapheme cluster).
 
 =head2 Keys
 

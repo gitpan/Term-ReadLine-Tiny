@@ -1,5 +1,5 @@
 {
-   "abstract" : "Read a line from STDIN.",
+   "abstract" : "This module is now called Term::ReadLine::Simple.",
    "author" : [
       "Matthaeus Kiem <cuer2s@gmail.com>"
    ],
@@ -46,7 +46,7 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "repository" : {
          "type" : "git",
@@ -54,5 +54,5 @@
          "web" : "https://github.com/kuerbis/Term-ReadLine::Tiny"
       }
    },
-   "version" : "0.010_05"
+   "version" : "0.011"
 }
